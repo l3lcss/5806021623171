@@ -17,6 +17,7 @@ struct jsonstruct:Decodable {
     let region:String
     let subregion:String
     let population: Int
+    let gini: Double?
     
 }
 
@@ -24,7 +25,9 @@ class ViewController: UIViewController,ChartViewDelegate {
     var testNa = [jsonstruct]()
     var country = [Double]()
     var population = [Double]()
+    var gini = [Double]()
     var name = [String]()
+    var alpha3Code = [String]()
     @IBOutlet weak var region: UITextField!
     @IBOutlet var chartView: CombinedChartView!
     @IBAction func fetchDataBtn(_ sender: SSBouncyButton) {
@@ -38,23 +41,18 @@ class ViewController: UIViewController,ChartViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        region.placeholder = "Filter By Region"
-//        while self.name.count <= 0 {
-//            getdata()
-//        }
-//        self.setChart(xValues: name, yValuesLineChart:  country, yValuesBarChart: population)
-        
-        // Do any additional setup after loading the view, typically from a nib.
+        region.placeholder = "Enter Country"
     }
     func getdata(){
-        self.population = []
-        self.country = []
-        self.name = []
         var jsonUrlString: String?
         if (region.hasText) {
-            jsonUrlString = "https://restcountries.eu/rest/v2/region/\(region.text ?? "europe")"
+            if (region.text == "all") {
+                jsonUrlString = "https://restcountries.eu/rest/v2/all"
+            } else {
+                jsonUrlString = "https://restcountries.eu/rest/v2/name/\(region.text ?? "thailand")?fullText=true"
+            }
         } else {
-            jsonUrlString = "https://restcountries.eu/rest/v2/name/eesti"
+            jsonUrlString = "https://restcountries.eu/rest/v2/name/thailand"
         }
         print("jsonUrlString => \(jsonUrlString ?? "europe")")
         guard let url = URL(string: jsonUrlString!) else {return}
@@ -65,11 +63,15 @@ class ViewController: UIViewController,ChartViewDelegate {
                 self.testNa = try JSONDecoder().decode([jsonstruct].self, from: data)
                 for mainarr in self.testNa{
                     print("mainarr.name => \(mainarr.name)")
-                    self.population.append(Double(mainarr.population)/10000000)
-                    self.country.append(Double(mainarr.population)/100000000)
-                    self.name.append(mainarr.name)
+                    self.population.append(Double(mainarr.population)/1000000)
+                    self.gini.append(mainarr.gini ?? 0.00)
+                    self.alpha3Code.append(mainarr.alpha3Code)
                 }
-                self.setChart(xValues: self.name, yValuesLineChart:  self.country, yValuesBarChart: self.population)
+                print("self.name => \(self.alpha3Code)")
+                print("self.population => \(self.population)")
+                print("self.gini => \(self.gini)")
+                self.setChart(xValues: self.alpha3Code, yValuesLineChart:  self.gini, yValuesBarChart: self.population)
+                super.viewDidLoad()
             } catch let jsonErr {
                 print("Error serializing json", jsonErr)
             }
@@ -98,4 +100,3 @@ class ViewController: UIViewController,ChartViewDelegate {
         chartView.xAxis.granularity = 1
     }
 }
-
